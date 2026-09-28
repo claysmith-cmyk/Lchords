@@ -16,23 +16,23 @@ If notes register but you hear nothing, click **Test sound** above the piano. MI
 
 ## The adventure
 
-- Five worlds cover major, minor, diminished triads, augmented triads, and dominant sevenths in all 12 roots: **60 chord identities**.
-- Twenty lessons introduce three chords each, then retrieve each twice without note hints. Up to two older chords are mixed into later lessons.
-- All worlds and lessons are available from the beginning, so experienced players can jump ahead.
+- Choose any of the 12 major keys. Each key has its own four-lesson path: **I–IV–V**, **ii–iii–vi**, **vii°–V7–I**, then **I+–IV–V7**. The augmented tonic in the last lesson is a color chord outside the major scale.
+- Each lesson introduces three chords, then asks for each twice without note hints. Finish a lesson to open the next lesson in that key. Start and continue other keys at any time; their lesson progress is independent.
+- Across the key paths you can encounter all **60 chord identities**: major, minor, diminished, augmented, and dominant seventh chords in all 12 roots. Chords shared by several keys keep one review card.
 - Mistakes and hints trigger extra recall within the session (up to 18 rounds), plus earlier future review. Hearing a chord in a recall round also counts as assistance.
 - Memory garden prioritizes due cards. Successful recall schedules reviews after 10 minutes, 1, 3, 7, 14, and 30 days; mistakes bring them back after 2 minutes. Each chord advances at most once per session. This is a simple fixed-interval schedule, not an individualized forgetting prediction.
 - Spark sprint offers 90 seconds of recall with streak bonuses using discovered chords. The chord book offers all formulas and individual practice.
-- XP and progress save locally in this browser. They do not sync across devices. Lesson completion records practice, not certified mastery. Chord spelling follows musical degrees; for example, D-flat minor contains F-flat, the same piano key as E.
+- XP and progress save locally in this browser. They do not sync across devices. Lesson completion records practice, not certified mastery. Existing chord cards and XP carry over from the older family-based curriculum; old lesson completion cannot map to a key path, so key lessons start fresh. Chord spelling follows musical degrees; for example, D-flat minor contains F-flat, the same piano key as E.
 
 The app uses native Web Audio for synthesized tone and has no runtime dependencies. Optional Google Fonts enhance the appearance; fallback fonts work without network access.
 
 ## Verify
 
-Run `npm test` for nine checks covering chord construction, inversions, enharmonic spelling, curriculum coverage, MIDI parsing, review scheduling, MIDI gameplay, permission failures, sprint expiry and lesson persistence. Game integration tests simulate DOM, MIDI and time; physical input and audible output are checked separately. Run `node --check app.js` to check syntax. See `TESTING.md` for the completed checks.
+Run `npm test` for nine checks covering chord construction, inversions, key spellings, curriculum coverage, MIDI parsing, review scheduling, MIDI gameplay, permission failures, sprint expiry and independent key progress. Game integration tests simulate DOM, MIDI and time; physical input and audible output are checked separately. Run `node --check app.js` to check syntax. See `TESTING.md` for the completed checks.
 
 ## Files
 
-- `music.js`: chord theory, curriculum, MIDI message parsing and review schedule.
+- `music.js`: chord theory, per-key lessons, MIDI message parsing and review schedule.
 - `app.js`: gameplay, MIDI/Web Audio, persistence and interface.
 - `index.html` / `style.css`: responsive game interface and vector artwork.
 - `server.js`: local-only static server, bound to 127.0.0.1 with an explicit file allowlist.

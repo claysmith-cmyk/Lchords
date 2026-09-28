@@ -5,3 +5,6 @@
 .audio-bar{display:flex;align-items:center;gap:14px;margin:0 0 18px;font-size:11px;color:var(--muted)}.audio-bar .secondary{padding:9px 13px;white-space:nowrap}@media(max-width:700px){.audio-bar{flex-wrap:wrap;gap:9px}}
 
 .note-chips:empty,.arena p:empty,.feedback:empty{display:none}
+.worlds{grid-template-columns:repeat(6,minmax(0,1fr))}.world-card{--world:var(--gold)}.world-card .world-art{height:58px;font-family:Outfit,sans-serif;font-size:34px}.world-card p{font-size:11px}.lesson-button:disabled{opacity:.5}.formula{letter-spacing:0;line-height:1.7;color:var(--muted)}
+@media(max-width:1000px){.worlds{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:700px){.worlds{grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.world-card{padding:12px 10px}.world-card .world-art{height:42px;font-size:27px}.world-card h3{font-size:12px}.world-card p{font-size:9px}.lesson-list{grid-template-columns:1fr}}

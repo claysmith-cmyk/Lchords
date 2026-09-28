@@ -1,15 +1,16 @@
-import { ROOTS, ROOT_ORDER, FAMILIES, chord, chordId, spellNotes, matches, midiEvent, shuffle, lesson, schedule, reviewQueue } from './music.js';
+import { ROOTS, ROOT_ORDER, KEY_NAMES as MAJOR_KEYS, KEY_STAGES, FAMILIES, chord, chordId, spellNotes, matches, midiEvent, shuffle, lesson, schedule, reviewQueue } from './music.js';
 
 const $ = id => document.getElementById(id);
 const STORAGE = 'chord-quest-v1';
-let progress = { xp: 0, cards: {}, completed: [], best: 0 };
+let progress = { xp: 0, cards: {}, completed: [], best: 0, selectedKey: 0 };
 let storageWarning = false;
 try {
   const saved = JSON.parse(localStorage.getItem(STORAGE));
   if (saved && typeof saved === 'object') {
     progress.xp = Number.isFinite(saved.xp) ? Math.max(0, saved.xp) : 0;
     progress.best = Number.isFinite(saved.best) ? Math.max(0, saved.best) : 0;
-    progress.completed = Array.isArray(saved.completed) ? saved.completed.filter(id => FAMILIES.some(f => [0, 1, 2, 3].some(g => id === `${f.id}-${g}`))) : [];
+    progress.completed = Array.isArray(saved.completed) ? saved.completed.filter(id => ROOT_ORDER.some(root => KEY_STAGES.some((_, stage) => id === `key-${root}-${stage}`))) : [];
+    progress.selectedKey = Number.isInteger(saved.selectedKey) && saved.selectedKey >= 0 && saved.selectedKey < 12 ? saved.selectedKey : 0;
     for (const [id, card] of Object.entries(saved.cards || {})) {
       try {
         chord(id);
@@ -19,7 +20,7 @@ try {
   }
 } catch { storageWarning = true; }
 
-let world = 0, session = null, access = null, selectedInput = null;
+let session = null, access = null, selectedInput = null;
 let audioContext, autoCheck, advanceTimer, sprintTimer, toastTimer;
 const sources = new Map(), voices = new Map();
 const keyboardMap = new Map('awsedftgyhujkolp;'.split('').map((key, i) => [key, 60 + i]));
@@ -42,25 +43,28 @@ function renderHome() {
   const ids = Object.keys(progress.cards), due = ids.filter(id => progress.cards[id].due <= Date.now());
   $('xp').textContent = `✦ ${progress.xp} XP`;
   $('learned').textContent = `${ids.length} / 60`;
-  $('level-count').textContent = `${progress.completed.length} / 20`;
+  $('level-count').textContent = `${progress.completed.length} / 48`;
   $('due-count').textContent = `${due.length} ready`;
-  $('continue').innerHTML = `${progress.completed.length ? 'Continue' : 'Start playing'} <span>↗</span>`;
-  $('worlds').innerHTML = FAMILIES.map((f, i) => {
-    const count = progress.completed.filter(id => id.startsWith(f.id + '-')).length;
-    return `<button class="world-card ${i === world ? 'selected' : ''}" style="--world:${f.color}" data-world="${i}" aria-pressed="${i === world}"><div class="world-art">${f.icon}</div><h3>${f.world}</h3><p>${f.name} · ${count}/4 lessons</p><div class="world-bar"><span style="width:${count * 25}%"></span></div></button>`;
+  const keyDone = KEY_STAGES.filter((_, stage) => progress.completed.includes(`key-${progress.selectedKey}-${stage}`)).length;
+  $('continue').innerHTML = `${keyDone === KEY_STAGES.length ? 'Review chords' : `${keyDone ? 'Continue' : 'Start'} ${MAJOR_KEYS[progress.selectedKey]}`} <span>↗</span>`;
+  $('worlds').innerHTML = ROOT_ORDER.map(root => {
+    const count = KEY_STAGES.filter((_, stage) => progress.completed.includes(`key-${root}-${stage}`)).length;
+    return `<button class="world-card ${root === progress.selectedKey ? 'selected' : ''}" data-key="${root}" aria-pressed="${root === progress.selectedKey}"><div class="world-art">${MAJOR_KEYS[root]}</div><h3>${MAJOR_KEYS[root]} major</h3><p>${count}/4 lessons complete</p><div class="world-bar"><span style="width:${count * 25}%"></span></div></button>`;
   }).join('');
-  document.querySelectorAll('[data-world]').forEach(button => button.onclick = () => { world = Number(button.dataset.world); renderHome(); });
-  const f = FAMILIES[world];
-  document.documentElement.style.setProperty('--accent', f.color);
-  $('world-name').textContent = `${f.name} chords`;
-  $('world-formula').textContent = `${f.formula}  /  ${f.steps} semitones`;
-  $('lessons').innerHTML = [0, 1, 2, 3].map(group => {
-    const done = progress.completed.includes(`${f.id}-${group}`);
-    return `<button class="lesson-button ${done ? 'complete' : ''}" data-group="${group}"><span class="lesson-number">${done ? '✓' : group + 1}</span><span><strong>Lesson ${group + 1}</strong><small>${ROOT_ORDER.slice(group * 3, group * 3 + 3).map(r => ROOTS[r] + f.symbol).join(' · ')}</small></span><span class="arrow">→</span></button>`;
+  document.querySelectorAll('[data-key]').forEach(button => button.onclick = () => selectKey(Number(button.dataset.key)));
+  const root = progress.selectedKey;
+  $('world-name').textContent = `${MAJOR_KEYS[root]} major path`;
+  $('world-formula').textContent = 'Finish a lesson to open the next. Start another key whenever you like.';
+  $('lessons').innerHTML = KEY_STAGES.map((stage, index) => {
+    const done = progress.completed.includes(`key-${root}-${index}`);
+    const locked = index > 0 && !progress.completed.includes(`key-${root}-${index - 1}`);
+    const names = lesson(root, index).slice(0, 3).map(p => `${p.role} ${p.name}`).join(' · ');
+    return `<button class="lesson-button ${done ? 'complete' : ''}" data-stage="${index}" ${locked ? 'disabled' : ''}><span class="lesson-number">${done ? '✓' : index + 1}</span><span><strong>${stage.name}</strong><small>${names}</small></span><span class="arrow">→</span></button>`;
   }).join('');
-  document.querySelectorAll('[data-group]').forEach(button => button.onclick = () => startLesson(f.id, Number(button.dataset.group)));
+  document.querySelectorAll('[data-stage]').forEach(button => button.onclick = () => startLesson(root, Number(button.dataset.stage)));
   renderBook();
 }
+function selectKey(root) { progress.selectedKey = root; save(); renderHome(); }
 function renderBook() {
   const f = FAMILIES[Number($('book-family').value) || 0];
   $('chord-book').innerHTML = ROOTS.map((_, root) => {
@@ -79,16 +83,13 @@ document.querySelectorAll('[data-page]').forEach(button => button.onclick = () =
   $('collection-page').hidden = button.dataset.page !== 'collection'; renderBook();
 });
 $('continue').onclick = () => {
-  for (const f of FAMILIES) for (let g = 0; g < 4; g++) if (!progress.completed.includes(`${f.id}-${g}`)) { startLesson(f.id, g); return; }
+  for (let stage = 0; stage < KEY_STAGES.length; stage++) if (!progress.completed.includes(`key-${progress.selectedKey}-${stage}`)) { startLesson(progress.selectedKey, stage); return; }
   startReview();
 };
-function startLesson(family, group) {
-  const queue = lesson(family, group);
-  const fresh = new Set(queue.map(p => p.id));
-  const old = reviewQueue(progress.cards).filter(id => !fresh.has(id)).slice(0, 2);
-  // Mix earlier material into new lessons so worlds do not become isolated drills.
-  for (const id of old) queue.splice(6, 0, { id, guided: false });
-  startSession('lesson', queue, `${FAMILIES.find(f => f.id === family).world} · Lesson ${group + 1}`, `${family}-${group}`);
+function startLesson(root, stage) {
+  if (stage > 0 && !progress.completed.includes(`key-${root}-${stage - 1}`)) return;
+  const queue = lesson(root, stage);
+  startSession('lesson', queue, `${MAJOR_KEYS[root]} major · ${KEY_STAGES[stage].name}`, `key-${root}-${stage}`);
 }
 function startSession(mode, queue, title, lessonId = null) {
   stopSession(); $('dialog').close();
@@ -107,7 +108,7 @@ function startSession(mode, queue, title, lessonId = null) {
 }
 function startReview() {
   const queue = reviewQueue(progress.cards).slice(0, 12).map(id => ({ id, guided: false }));
-  if (!queue.length) { modal('<h2>No chords to review yet</h2><p>Complete a lesson to start reviewing.</p><button class="primary" id="garden-start">Start lesson →</button>'); $('garden-start').onclick = () => startLesson('major', 0); return; }
+  if (!queue.length) { modal('<h2>No chords to review yet</h2><p>Complete a lesson to start reviewing.</p><button class="primary" id="garden-start">Start lesson →</button>'); $('garden-start').onclick = () => $('continue').click(); return; }
   startSession('review', queue, 'Memory garden · Recall & grow');
 }
 $('review').onclick = startReview;
@@ -126,9 +127,9 @@ function renderPrompt() {
   $('session-score').textContent = `✦ ${s.xp} XP`;
   if (s.mode !== 'sprint') $('session-progress').style.width = `${s.index / s.queue.length * 100}%`;
   $('prompt-kind').textContent = prompt.guided ? `DISCOVER · ${s.index + 1} / ${s.queue.length}` : s.mode === 'sprint' ? `${s.streak} CHORD STREAK` : `RECALL · ${s.index + 1} / ${s.queue.length}`;
-  $('chord-name').textContent = `${ROOTS[c.root]} ${c.family.name.toLowerCase()}`;
-  $('prompt-description').textContent = prompt.guided ? `${c.family.formula} · ${c.family.steps} semitones` : '';
-  $('note-chips').innerHTML = prompt.guided ? spellNotes(c).map(n => `<span class="note-chip">${n}</span>`).join('') : '';
+  $('chord-name').textContent = `${prompt.rootName || ROOTS[c.root]} ${c.family.name.toLowerCase()}`;
+  $('prompt-description').textContent = prompt.role ? `${prompt.role} in ${prompt.keyName} major${prompt.guided ? ` · ${c.family.formula}` : ''}` : prompt.guided ? `${c.family.formula} · ${c.family.steps} semitones` : '';
+  $('note-chips').innerHTML = prompt.guided ? spellNotes(c, prompt.rootName).map(n => `<span class="note-chip">${n}</span>`).join('') : '';
   $('feedback').textContent = '';
   $('feedback').className = 'feedback';
   $('next').hidden = true; $('hint').hidden = prompt.guided; $('listen').disabled = false; $('check').disabled = false;
@@ -137,10 +138,10 @@ function renderPrompt() {
 }
 function reveal() {
   if (!session || session.complete) return;
-  const c = chord(session.queue[session.index].id);
+  const prompt = session.queue[session.index], c = chord(prompt.id);
   session.hint = true;
-  $('note-chips').innerHTML = spellNotes(c).map(n => `<span class="note-chip">${n}</span>`).join('');
-  $('prompt-description').textContent = `${c.family.formula} · ${c.family.steps} semitones from ${ROOTS[c.root]}.`;
+  $('note-chips').innerHTML = spellNotes(c, prompt.rootName).map(n => `<span class="note-chip">${n}</span>`).join('');
+  $('prompt-description').textContent = `${c.family.formula} · ${c.family.steps} semitones from ${prompt.rootName || ROOTS[c.root]}.`;
   $('feedback').textContent = '';
   $('hint').disabled = true; highlightPiano();
 }
@@ -353,7 +354,7 @@ function showMidiDialog() {
   for (const input of inputs) select.add(new Option(input.name || 'MIDI keyboard', input.id, false, input.id === selectedInput?.id));
   select.onchange = () => { selectedInput = access.inputs.get(select.value); attachMidi(); };
 }
-$('help').onclick = () => modal('<div class="eyebrow">WELCOME, EXPLORER</div><h2>A keyboard. A little curiosity.</h2><ol><li><strong>Connect:</strong> plug in a USB MIDI keyboard and choose “Connect keyboard”. Allow MIDI access in Chrome or Edge.</li><li><strong>Discover:</strong> choose a world and lesson. Glowing piano keys show the chord; semitone steps explain how to build it.</li><li><strong>Recall:</strong> the note hints disappear. Play the whole chord together in any octave or inversion. Extra notes don’t count.</li><li><strong>No keyboard?</strong> Hold the marked computer keys together, or click piano notes to toggle them on and off. Choose Check chord.</li><li><strong>Keep it growing:</strong> revisit the Memory garden, mix in older chords, or try a 90-second Spark sprint.</li></ol><p>Progress saves in this browser on this device. A completed lesson means you practiced it; spaced recall builds lasting memory. Diminished means a three-note diminished triad; dominant 7 is a major triad plus a minor seventh.</p>');
+$('help').onclick = () => modal('<div class="eyebrow">WELCOME, EXPLORER</div><h2>A keyboard. A little curiosity.</h2><ol><li><strong>Choose a key:</strong> every major key has its own four-lesson path. Start several keys and continue each one independently.</li><li><strong>Discover:</strong> begin with I, IV and V. Later lessons add minor chords, tension, and an augmented color chord. Glowing piano keys show the notes.</li><li><strong>Recall:</strong> the note hints disappear. Play the whole chord together in any octave or inversion. Extra notes don’t count.</li><li><strong>Connect:</strong> choose “Connect keyboard” for USB MIDI in Chrome or Edge, or use computer keys or the on-screen piano.</li><li><strong>Review:</strong> revisit learned chords in the Memory garden or try Spark sprint.</li></ol><p>Progress saves in this browser on this device. A completed lesson means you practiced it; spaced recall builds lasting memory.</p>');
 window.addEventListener('pagehide', () => { stopSession(); clearTimeout(toastTimer); if (access) { access.onstatechange = null; for (const input of access.inputs.values()) input.onmidimessage = null; } audioContext?.close(); });
 buildPiano(); renderHome();
 if (storageWarning) toast('Saved progress could not be read. New progress will be saved if browser storage is available.');

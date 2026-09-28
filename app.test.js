@@ -6,8 +6,9 @@ import * as music from './music.js';
 
 // A small DOM/MIDI boundary double lets real game handlers run without hardware.
 const source = (await readFile(new URL('./app.js', import.meta.url), 'utf8')).replace(/^import .*?;\s*/, '');
-function fixture() {
+function fixture(saved = null) {
   const elements = new Map(), timers = new Map(), events = new Map(), storage = new Map();
+  if (saved) storage.set('chord-quest-v1', JSON.stringify(saved));
   let time = 1000000, timerId = 0;
   function element(id) {
     if (!elements.has(id)) elements.set(id, {
@@ -21,7 +22,7 @@ function fixture() {
   const input = { id: 'test-midi', name: 'Test keyboard', state: 'connected' };
   const midi = { inputs: new Map([[input.id, input]]) };
   const context = {
-    ...music, console, Map, Set, JSON, Math, Number,
+    ...music, MAJOR_KEYS: music.KEY_NAMES, console, Map, Set, JSON, Math, Number,
     schedule: (previous, success) => music.schedule(previous, success, time),
     reviewQueue: cards => music.reviewQueue(cards, time),
     Date: class extends Date { static now() { return time; } },
@@ -37,7 +38,7 @@ function fixture() {
   };
   vm.runInNewContext(source, context);
   return {
-    element, input, midi, events, navigator: context.navigator,
+    element, input, midi, events, navigator: context.navigator, selectKey: root => context.selectKey(root),
     click: id => element(id).onclick(),
     send: (status, note, velocity = 100) => input.onmidimessage({ data: [status, note, velocity] }),
     run: ms => { for (const [id, t] of [...timers]) if (t.ms === ms) { if (ms !== 'interval') timers.delete(id); t.fn(); } },
@@ -107,7 +108,7 @@ test('missing MIDI API and denied permission keep other controls usable', async 
 test('lesson completion persists and repeated recall advances a card only once per session', async () => {
   const f = fixture();
   await f.click('midi-connect'); f.element('dialog').close(); f.click('continue');
-  const shapes = { 'C major': [60, 64, 67], 'F major': [65, 69, 72], 'G major': [67, 71, 74] };
+  const shapes = { 'C major': [60, 64, 67], 'F major': [65, 69, 72], 'G major': [67, 71, 74], 'D major': [62, 66, 69] };
   for (let i = 0; i < 9; i++) {
     const notes = shapes[f.element('chord-name').textContent];
     assert.ok(notes);
@@ -117,11 +118,32 @@ test('lesson completion persists and repeated recall advances a card only once p
     for (const note of notes) f.send(0x80, note, 0);
     f.run(800);
   }
-  assert.deepEqual(f.saved().completed, ['major-0']);
+  assert.deepEqual(f.saved().completed, ['key-0-0']);
   assert.equal(f.saved().xp, 105);
   for (const card of Object.values(f.saved().cards)) {
     assert.equal(card.level, 0);
     assert.equal(card.due, 1600000);
   }
   assert.equal(f.timers.size, 0);
+  f.selectKey(7);
+  assert.match(f.element('world-name').textContent, /G major path/);
+  assert.match(f.element('lessons').innerHTML, /disabled/);
+  f.click('continue');
+  assert.equal(f.element('chord-name').textContent, 'G major');
+  for (let i = 0; i < 9; i++) {
+    const notes = shapes[f.element('chord-name').textContent];
+    for (const note of notes) f.send(0x90, note);
+    f.run(350);
+    for (const note of notes) f.send(0x80, note, 0);
+    f.run(800);
+  }
+  assert.deepEqual(f.saved().completed, ['key-0-0', 'key-7-0']);
+  f.selectKey(0);
+  f.click('continue');
+  assert.equal(f.element('chord-name').textContent, 'D minor');
+  f.click('exit');
+  const restored = fixture(f.saved());
+  assert.equal(restored.element('world-name').textContent, 'C major path');
+  assert.match(restored.element('lessons').innerHTML, /Minor colors/);
+  assert.equal(restored.saved().selectedKey, 0);
 });

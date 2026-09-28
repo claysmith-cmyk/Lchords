@@ -2,23 +2,27 @@
 
 ## Automated
 
-`node --test`: 9 passed, 0 failed.
+`npm test`: 9 passed, 0 failed.
 
 - Every combination of 12 roots and five chord families, inversions, octave doubling, missing notes and extra notes.
 - Correct theoretical spelling, including double accidentals.
-- Twenty lessons covering all 60 chord identities, each with guided discovery and two recalls.
+- Forty-eight lessons across 12 independent major-key paths cover all 60 chord identities, each with guided discovery and two recalls. G and F-sharp key spellings checked.
 - MIDI note-on, note-off, velocity-zero note-on, multiple channels, panic messages and ignored sustain.
 - Review intervals, failures and due-order prioritization.
 - Full MIDI handler flow with simulated input, 350 ms hold validation, release-to-advance, disconnect/reconnect and cleanup.
 - Sprint deadline prevents late XP and clears its interval.
 - Missing/denied MIDI access and computer-key fallback.
-- Full lesson persistence and at-most-once review advancement per chord per session.
+- Full C and G first lessons, independent completion, reopening C's next lesson, and at-most-once review advancement per chord per session.
 
-`node --check app.js`, `node --check server.js`: passed.
+`node --check app.js`, `node --check music.js`, `node --check server.js`: passed.
 
 HTTP checks: game asset served with 200; unlisted file returned 404. Server binds only to 127.0.0.1.
 
 ## Browser
+
+Key-path browser check: all 12 keys appeared in a two-row desktop grid. Selecting G showed its I–IV–V, ii–iii–vi, vii°–V7–I, and I+–IV–V7 lesson lists; later lessons were disabled. Starting G opened the guided G major chord with G–B–D note hints. Returning to the key map and selecting C restored its own path. No browser console errors were captured. The local test server was stopped afterward.
+
+Earlier browser checks for the family-based curriculum:
 
 - Full first lesson, wrong answer feedback, hinted recall, additional retry and completion summary.
 - First-inversion C major accepted; hidden recall rounds have no target-key highlights.

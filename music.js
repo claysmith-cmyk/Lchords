@@ -7,6 +7,13 @@ export const FAMILIES = [
   { id: 'dominant7', name: 'Dominant 7', symbol: '7', intervals: [0, 4, 7, 10], formula: '1 · 3 · 5 · ♭7', steps: '4 + 3 + 3', world: 'Starlight Summit', color: '#f3d586', icon: '✦', description: 'Ready to go somewhere. Add a minor seventh to a major triad.' },
 ];
 export const ROOT_ORDER = [0, 5, 7, 2, 9, 4, 11, 10, 3, 8, 1, 6];
+export const KEY_NAMES = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
+export const KEY_STAGES = [
+  { name: 'Home chords', chords: [[0, 'major', 'I'], [3, 'major', 'IV'], [4, 'major', 'V']] },
+  { name: 'Minor colors', chords: [[1, 'minor', 'ii'], [2, 'minor', 'iii'], [5, 'minor', 'vi']] },
+  { name: 'Tension & return', chords: [[6, 'diminished', 'vii°'], [4, 'dominant7', 'V7'], [0, 'major', 'I']] },
+  { name: 'Color & cadence', chords: [[0, 'augmented', 'I+'], [3, 'major', 'IV'], [4, 'dominant7', 'V7']] },
+];
 export const chordId = (family, root) => `${family}:${root}`;
 export function chord(id) {
   const [familyId, rootText] = id.split(':');
@@ -16,10 +23,10 @@ export function chord(id) {
   return { id, family, root, name: `${ROOTS[root]}${family.symbol}`, notes: family.intervals.map(n => (root + n) % 12) };
 }
 // Spelling follows chord degrees, including double flats/sharps where theory requires them.
-export function spellNotes(c) {
+export function spellNotes(c, rootName = ROOTS[c.root]) {
   const letters = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
   const naturals = [0, 2, 4, 5, 7, 9, 11];
-  const start = letters.indexOf(ROOTS[c.root][0]);
+  const start = letters.indexOf(rootName[0]);
   return c.notes.map((note, i) => {
     const index = (start + i * 2) % 7;
     let delta = (note - naturals[index] + 12) % 12;
@@ -44,9 +51,26 @@ export function shuffle(items, random = Math.random) {
   for (let i = result.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [result[i], result[j]] = [result[j], result[i]]; }
   return result;
 }
-export function lesson(family, group) {
-  const ids = ROOT_ORDER.slice(group * 3, group * 3 + 3).map(root => chordId(family, root));
-  return [...ids.map(id => ({ id, guided: true })), ...shuffle(ids).map(id => ({ id, guided: false })), ...shuffle(ids).map(id => ({ id, guided: false }))];
+export function keyNotes(root) {
+  const letters = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  const naturals = [0, 2, 4, 5, 7, 9, 11];
+  const start = letters.indexOf(KEY_NAMES[root]?.[0]);
+  if (start < 0) throw new Error('Invalid key');
+  return [0, 2, 4, 5, 7, 9, 11].map((step, degree) => {
+    const index = (start + degree) % 7;
+    let delta = (root + step - naturals[index] + 12) % 12;
+    if (delta > 6) delta -= 12;
+    return letters[index] + (delta < 0 ? '♭'.repeat(-delta) : '♯'.repeat(delta));
+  });
+}
+export function lesson(root, stage) {
+  if (!Number.isInteger(root) || root < 0 || root > 11 || !KEY_STAGES[stage]) throw new Error('Invalid lesson');
+  const notes = keyNotes(root);
+  const prompts = KEY_STAGES[stage].chords.map(([degree, family, role]) => {
+    const chordRoot = (root + [0, 2, 4, 5, 7, 9, 11][degree]) % 12;
+    return { id: chordId(family, chordRoot), name: notes[degree] + FAMILIES.find(f => f.id === family).symbol, rootName: notes[degree], keyName: KEY_NAMES[root], role };
+  });
+  return [...prompts.map(p => ({ ...p, guided: true })), ...shuffle(prompts).map(p => ({ ...p, guided: false })), ...shuffle(prompts).map(p => ({ ...p, guided: false }))];
 }
 export const INTERVALS = [10 * 60000, 86400000, 3 * 86400000, 7 * 86400000, 14 * 86400000, 30 * 86400000];
 export function schedule(previous, success, now = Date.now()) {
