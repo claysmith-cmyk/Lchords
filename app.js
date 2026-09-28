@@ -336,7 +336,7 @@ function attachMidi() {
   return inputs;
 }
 $('midi-connect').onclick = async () => {
-  if (!navigator.requestMIDIAccess) { modal('<div class="eyebrow">CONNECT YOUR INSTRUMENT</div><h2>Let’s find your keyboard.</h2><p>This browser does not expose Web MIDI. Open the game in desktop Chrome or Edge at localhost, plug in your USB MIDI keyboard, then try again. You can also play with computer keys or click the piano.</p>'); return; }
+  if (!navigator.requestMIDIAccess) { modal('<div class="eyebrow">CONNECT YOUR INSTRUMENT</div><h2>Let’s find your keyboard.</h2><p>This browser does not expose Web MIDI. Open the game in desktop Chrome or Edge over HTTPS or at localhost, plug in your USB MIDI keyboard, then try again. You can also play with computer keys or click the piano.</p>'); return; }
   try {
     ensureAudio();
     access ||= await navigator.requestMIDIAccess({ sysex: false });
