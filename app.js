@@ -24,6 +24,7 @@ let audioContext, autoCheck, advanceTimer, sprintTimer, toastTimer;
 const sources = new Map(), voices = new Map();
 const keyboardMap = new Map('awsedftgyhujkolp;'.split('').map((key, i) => [key, 60 + i]));
 const blackNotes = new Set([1, 3, 6, 8, 10]);
+const KEY_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
 
 function save() {
   try { localStorage.setItem(STORAGE, JSON.stringify(progress)); }
@@ -288,7 +289,7 @@ function highlightPiano() {
     key.classList.toggle('target', target.includes(note % 12));
     key.setAttribute('aria-pressed', String(notes.has(note)));
   });
-  $('held-notes').textContent = notes.size ? [...pitchClasses].sort((a, b) => a - b).map(n => ROOTS[n]).join(' · ') : 'Play the notes together';
+  $('held-notes').textContent = notes.size ? [...pitchClasses].sort((a, b) => a - b).map(n => KEY_NAMES[n]).join(' · ') : 'Play the notes together';
 }
 function buildPiano() {
   let white = 0;
@@ -296,9 +297,9 @@ function buildPiano() {
   for (let note = 60; note <= 84; note++) {
     const black = blackNotes.has(note % 12), key = document.createElement('button');
     key.className = `key ${black ? 'black' : 'white'}`; key.dataset.note = note;
-    key.setAttribute('aria-label', `${ROOTS[note % 12]}${Math.floor(note / 12) - 1}`);
+    key.setAttribute('aria-label', `${KEY_NAMES[note % 12]}${Math.floor(note / 12) - 1}`);
     key.setAttribute('aria-pressed', 'false');
-    key.innerHTML = `<span>${ROOTS[note % 12]}</span><small>${[...keyboardMap].find(([, n]) => n === note)?.[0].toUpperCase() || '·'}</small>`;
+    key.innerHTML = `<span>${KEY_NAMES[note % 12]}</span><small>${[...keyboardMap].find(([, n]) => n === note)?.[0].toUpperCase() || '·'}</small>`;
     if (black) key.style.left = `${white / whiteCount * 100 - 2.075}%`; else white++;
     key.onclick = () => { if (!session || session.complete) return; ensureAudio(); setNote(`click:${note}`, note, !sources.has(`click:${note}`)); };
     $('piano').append(key);
