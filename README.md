@@ -12,7 +12,7 @@ Without MIDI, hold the displayed computer keys together, or click piano notes to
 
 Web MIDI needs a supported browser and a secure context: localhost is supported, and a deployed copy needs HTTPS. See [MDN Web MIDI](https://developer.mozilla.org/en-US/docs/Web/API/Web_MIDI_API). A hardware keyboard and browser permission are necessary for an end-to-end hardware test.
 
-If notes register but you hear nothing, click **Enable sound / test tone** above the piano. MIDI input alone may not satisfy the browser's audio activation policy. The audio status reports whether playback is running or paused. If it says **Audio ready** but the test tone is silent, check the browser/app volume and selected output in Windows. See [Web Audio activation guidance](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Best_practices).
+If notes register but you hear nothing, click **Test sound** above the piano. MIDI input alone may not satisfy the browser's audio activation policy. The audio status reports whether playback is running or paused. If it says **Audio ready** but the test tone is silent, check the browser/app volume and selected output in Windows. See [Web Audio activation guidance](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Best_practices).
 
 ## The adventure
 
@@ -36,5 +36,3 @@ Run `npm test` for nine checks covering chord construction, inversions, enharmon
 - `app.js`: gameplay, MIDI/Web Audio, persistence and interface.
 - `index.html` / `style.css`: responsive game interface and vector artwork.
 - `server.js`: local-only static server, bound to 127.0.0.1 with an explicit file allowlist.
-
-Work is on `codex/chord-quest`. Merge only after user approval.

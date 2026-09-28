@@ -43,23 +43,20 @@ function renderHome() {
   $('xp').textContent = `✦ ${progress.xp} XP`;
   $('learned').textContent = `${ids.length} / 60`;
   $('level-count').textContent = `${progress.completed.length} / 20`;
-  $('due-count').textContent = due.length ? `${due.length} ready to revisit` : ids.length ? 'All watered!' : 'A fresh start';
-  $('due-caption').textContent = due.length ? 'A little recall keeps them growing' : ids.length ? 'Practice anytime, or return later' : 'Your memory garden is ready';
-  $('continue').innerHTML = `${progress.completed.length ? 'Continue your adventure' : 'Begin your adventure'} <span>↗</span>`;
+  $('due-count').textContent = `${due.length} ready`;
+  $('continue').innerHTML = `${progress.completed.length ? 'Continue' : 'Start playing'} <span>↗</span>`;
   $('worlds').innerHTML = FAMILIES.map((f, i) => {
     const count = progress.completed.filter(id => id.startsWith(f.id + '-')).length;
-    return `<button class="world-card ${i === world ? 'selected' : ''}" style="--world:${f.color}" data-world="${i}" aria-pressed="${i === world}"><div class="world-art">${f.icon}</div><small>WORLD 0${i + 1}</small><h3>${f.world}</h3><p>${f.name} chords · ${count}/4 lessons</p><div class="world-bar"><span style="width:${count * 25}%"></span></div></button>`;
+    return `<button class="world-card ${i === world ? 'selected' : ''}" style="--world:${f.color}" data-world="${i}" aria-pressed="${i === world}"><div class="world-art">${f.icon}</div><h3>${f.world}</h3><p>${f.name} · ${count}/4 lessons</p><div class="world-bar"><span style="width:${count * 25}%"></span></div></button>`;
   }).join('');
   document.querySelectorAll('[data-world]').forEach(button => button.onclick = () => { world = Number(button.dataset.world); renderHome(); });
   const f = FAMILIES[world];
   document.documentElement.style.setProperty('--accent', f.color);
-  $('world-number').textContent = `WORLD 0${world + 1} · ${f.name.toUpperCase()} CHORDS`;
-  $('world-name').textContent = f.world;
-  $('world-description').textContent = f.description;
+  $('world-name').textContent = `${f.name} chords`;
   $('world-formula').textContent = `${f.formula}  /  ${f.steps} semitones`;
   $('lessons').innerHTML = [0, 1, 2, 3].map(group => {
     const done = progress.completed.includes(`${f.id}-${group}`);
-    return `<button class="lesson-button ${done ? 'complete' : ''}" data-group="${group}"><span class="lesson-number">${done ? '✓' : group + 1}</span><span><strong>${['First steps', 'New horizons', 'The winding trail', 'Beyond the familiar'][group]}</strong><small>${ROOT_ORDER.slice(group * 3, group * 3 + 3).map(r => ROOTS[r] + f.symbol).join(' · ')} · Learn + recall</small></span><span class="arrow">→</span></button>`;
+    return `<button class="lesson-button ${done ? 'complete' : ''}" data-group="${group}"><span class="lesson-number">${done ? '✓' : group + 1}</span><span><strong>Lesson ${group + 1}</strong><small>${ROOT_ORDER.slice(group * 3, group * 3 + 3).map(r => ROOTS[r] + f.symbol).join(' · ')}</small></span><span class="arrow">→</span></button>`;
   }).join('');
   document.querySelectorAll('[data-group]').forEach(button => button.onclick = () => startLesson(f.id, Number(button.dataset.group)));
   renderBook();
@@ -68,7 +65,7 @@ function renderBook() {
   const f = FAMILIES[Number($('book-family').value) || 0];
   $('chord-book').innerHTML = ROOTS.map((_, root) => {
     const c = chord(chordId(f.id, root)), card = progress.cards[c.id];
-    const state = !card ? 'Undiscovered · try it' : card.level < 1 ? 'Seedling · keep practicing' : card.due <= Date.now() ? 'Ready for review' : 'Growing · practice again';
+    const state = !card ? 'New' : card.level < 1 ? 'Practicing' : card.due <= Date.now() ? 'Review due' : 'Practiced';
     return `<button class="book-card" data-chord="${c.id}"><h3>${c.name}</h3><p>${spellNotes(c).join(' · ')}</p><small>${state} ↗</small></button>`;
   }).join('');
   document.querySelectorAll('[data-chord]').forEach(button => button.onclick = () => startSession('practice', [{ id: button.dataset.chord, guided: true }, { id: button.dataset.chord, guided: false }], 'Chord book practice'));
@@ -110,7 +107,7 @@ function startSession(mode, queue, title, lessonId = null) {
 }
 function startReview() {
   const queue = reviewQueue(progress.cards).slice(0, 12).map(id => ({ id, guided: false }));
-  if (!queue.length) { modal('<div class="eyebrow">YOUR MEMORY GARDEN</div><h2>Plant your first chord.</h2><p>Finish a few guided rounds to begin. Your chords return for review after 10 minutes, then 1, 3, 7, 14, and 30 days as your recall grows. Mistakes bring them back sooner.</p><button class="primary" id="garden-start">Start the first lesson →</button>'); $('garden-start').onclick = () => startLesson('major', 0); return; }
+  if (!queue.length) { modal('<h2>No chords to review yet</h2><p>Complete a lesson to start reviewing.</p><button class="primary" id="garden-start">Start lesson →</button>'); $('garden-start').onclick = () => startLesson('major', 0); return; }
   startSession('review', queue, 'Memory garden · Recall & grow');
 }
 $('review').onclick = startReview;
@@ -128,12 +125,11 @@ function renderPrompt() {
   $('session-title').textContent = s.mode === 'sprint' ? `Spark sprint · ${Math.ceil((s.end - Date.now()) / 1000)}s left` : s.title;
   $('session-score').textContent = `✦ ${s.xp} XP`;
   if (s.mode !== 'sprint') $('session-progress').style.width = `${s.index / s.queue.length * 100}%`;
-  $('prompt-kind').textContent = prompt.guided ? 'DISCOVER · FOLLOW THE GLOW' : s.mode === 'sprint' ? `SPARK SPRINT · ${s.streak} CHORD STREAK` : `RECALL · ${s.index + 1} OF ${s.queue.length}`;
-  $('scene-icon').textContent = c.family.icon;
+  $('prompt-kind').textContent = prompt.guided ? `DISCOVER · ${s.index + 1} / ${s.queue.length}` : s.mode === 'sprint' ? `${s.streak} CHORD STREAK` : `RECALL · ${s.index + 1} / ${s.queue.length}`;
   $('chord-name').textContent = `${ROOTS[c.root]} ${c.family.name.toLowerCase()}`;
-  $('prompt-description').textContent = prompt.guided ? `${c.family.formula} · Start on ${ROOTS[c.root]}, then move up ${c.family.steps} semitones.` : 'Find this chord from memory. Any octave or inversion counts.';
-  $('note-chips').innerHTML = prompt.guided ? spellNotes(c).map(n => `<span class="note-chip">${n}</span>`).join('') : '<span class="muted">The notes are yours to remember.</span>';
-  $('feedback').textContent = prompt.guided ? c.family.description : 'Take a breath. Let your hands remember.';
+  $('prompt-description').textContent = prompt.guided ? `${c.family.formula} · ${c.family.steps} semitones` : '';
+  $('note-chips').innerHTML = prompt.guided ? spellNotes(c).map(n => `<span class="note-chip">${n}</span>`).join('') : '';
+  $('feedback').textContent = '';
   $('feedback').className = 'feedback';
   $('next').hidden = true; $('hint').hidden = prompt.guided; $('listen').disabled = false; $('check').disabled = false;
   $('hint').disabled = false;
@@ -145,7 +141,7 @@ function reveal() {
   session.hint = true;
   $('note-chips').innerHTML = spellNotes(c).map(n => `<span class="note-chip">${n}</span>`).join('');
   $('prompt-description').textContent = `${c.family.formula} · ${c.family.steps} semitones from ${ROOTS[c.root]}.`;
-  $('feedback').textContent = 'A little help is part of learning. This chord will return sooner.';
+  $('feedback').textContent = '';
   $('hint').disabled = true; highlightPiano();
 }
 $('hint').onclick = reveal;
@@ -178,7 +174,7 @@ function check(automatic = false) {
   save();
   $('arena').classList.add('success');
   $('feedback').className = 'feedback success';
-  $('feedback').textContent = `${['That’s the sound!', 'A little magic, made by you.', 'Beautiful. You found it!', 'Another chord in your pocket.'][s.correct % 4]} +${reward} XP`;
+  $('feedback').textContent = `Correct · +${reward} XP`;
   $('session-score').textContent = `✦ ${s.xp} XP`;
   $('next').hidden = false; $('check').disabled = true; $('hint').disabled = true;
   $('next').textContent = s.mode !== 'sprint' && s.index === s.queue.length - 1 ? 'Finish session ✦' : 'Keep going →';
@@ -205,7 +201,7 @@ function finish() {
   if (s.lessonId && !progress.completed.includes(s.lessonId)) progress.completed.push(s.lessonId);
   if (s.mode === 'sprint') progress.best = Math.max(progress.best, s.correct);
   save(); stopSession(); showHome();
-  modal(`<div class="eyebrow">${s.mode === 'sprint' ? 'SPARK SPRINT COMPLETE' : 'A LITTLE BETTER THAN BEFORE'}</div><h2>${s.mode === 'lesson' ? 'Trail complete.' : s.mode === 'sprint' ? 'You brought the spark.' : 'Your chords are growing.'}</h2><div class="result-number">+${s.xp} <span style="font-size:22px">XP</span></div><p>${s.assisted ? 'You worked through the tricky spots. Assisted chords will return sooner for another try.' : 'Let these sounds settle in. Your memory garden will tell you when they’re ready for another visit.'}</p><div class="result-stats"><span>${s.correct} chords played</span><span>${s.assisted} with help or retries</span>${s.mode === 'sprint' ? `<span>Best: ${progress.best}</span>` : ''}</div><button class="primary" id="result-done">Back to the adventure →</button>`);
+  modal(`<h2>${s.mode === 'sprint' ? 'SPARK SPRINT COMPLETE' : 'Session complete'}</h2><div class="result-number">+${s.xp} <span style="font-size:22px">XP</span></div><div class="result-stats"><span>${s.correct} chords played</span><span>${s.assisted} assisted</span>${s.mode === 'sprint' ? `<span>Best: ${progress.best}</span>` : ''}</div><button class="primary" id="result-done">Back to adventure →</button>`);
   $('result-done').onclick = () => $('dialog').close();
 }
 function stopSession() { clearInterval(sprintTimer); clearTimeout(autoCheck); clearNotes(); session = null; }
@@ -217,12 +213,12 @@ function ensureAudio() {
   try {
     audioContext ||= new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
     audioContext.onstatechange = audioStatus;
-    if (audioContext.state !== 'running') audioContext.resume().then(audioStatus).catch(() => { $('audio-status').textContent = 'Audio blocked. Click Enable sound, or open in Chrome / Edge.'; });
+    if (audioContext.state !== 'running') audioContext.resume().then(audioStatus).catch(() => { $('audio-status').textContent = 'Audio blocked. Click Test sound, or open in Chrome / Edge.'; });
     audioStatus();
   } catch { $('audio-status').textContent = 'Audio unavailable here. Open the game in Chrome or Edge.'; }
 }
 function audioStatus() {
-  $('audio-status').textContent = !$('sound').checked ? 'Piano sound is switched off.' : audioContext?.state === 'running' ? 'Audio ready. If silent, check the app / browser volume in Windows.' : 'Audio paused by browser. Click Enable sound.';
+  $('audio-status').textContent = !$('sound').checked ? 'Sound off' : audioContext?.state === 'running' ? 'Audio ready' : 'Audio paused';
 }
 $('audio-enable').onclick = () => {
   $('sound').checked = true;
@@ -254,7 +250,7 @@ function soundOff(note) {
 $('sound').onchange = () => { if (!$('sound').checked) [...voices.keys()].forEach(soundOff); else ensureAudio(); audioStatus(); };
 $('listen').onclick = () => {
   if (!session) return;
-  if (!session.queue[session.index].guided && !session.complete) { session.hint = true; $('feedback').textContent = 'Listen, then find the shape. This assisted recall will return sooner.'; }
+  if (!session.queue[session.index].guided && !session.complete) { session.hint = true; $('feedback').textContent = 'Assisted recall · review sooner'; }
   ensureAudio(); if (!audioContext) { toast('Audio is unavailable in this browser.'); return; }
   const c = chord(session.queue[session.index].id);
   c.family.intervals.forEach((interval, i) => {
@@ -326,7 +322,7 @@ function attachMidi() {
   selectedInput = inputs.find(input => input.id === selectedInput?.id) || inputs[0] || null;
   $('midi-connect').classList.toggle('connected', Boolean(selectedInput));
   $('midi-label').textContent = selectedInput ? selectedInput.name || 'MIDI connected' : 'No keyboard detected';
-  $('input-label').textContent = selectedInput ? 'MIDI CONNECTED · YOUR PIANO' : 'YOUR PIANO';
+  $('input-label').textContent = selectedInput ? 'MIDI CONNECTED' : 'PIANO';
   if (selectedInput) selectedInput.onmidimessage = e => {
     if (!session || $('dialog').open) return;
     const event = midiEvent(e.data); if (!event) return;
@@ -351,7 +347,7 @@ $('midi-connect').onclick = async () => {
 };
 function showMidiDialog() {
   const inputs = [...access.inputs.values()].filter(i => i.state === 'connected');
-  modal(`<div class="eyebrow">YOUR INSTRUMENT, YOUR ADVENTURE</div><h2>${inputs.length ? 'You’re plugged in.' : 'Listening for a keyboard…'}</h2><p>${inputs.length ? 'Choose your input. Hold a chord briefly to check it automatically. Sustain messages are ignored, so lift your fingers between chords. Turn Sound off if your keyboard already makes its own sound.' : 'Plug in your USB MIDI keyboard and turn it on. It will appear here automatically. If needed, check your manufacturer’s MIDI driver.'}</p><label for="midi-select">MIDI input</label><select id="midi-select" style="display:block;width:100%;margin-top:10px"></select><p style="margin-top:16px">You can always use computer keys or click notes on the on-screen piano.</p>`);
+  modal(`<h2>${inputs.length ? 'Keyboard connected' : 'Waiting for keyboard…'}</h2><p>${inputs.length ? 'Choose an input. Hold chords briefly to check them.' : 'Plug in and turn on your USB MIDI keyboard.'}</p><label for="midi-select">MIDI input</label><select id="midi-select" style="display:block;width:100%;margin-top:10px"></select>`);
   const select = $('midi-select');
   if (!inputs.length) { const option = new Option('Waiting for a MIDI device', ''); select.add(option); select.disabled = true; }
   for (const input of inputs) select.add(new Option(input.name || 'MIDI keyboard', input.id, false, input.id === selectedInput?.id));
