@@ -3,6 +3,20 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "scripts": { "start": "node server.js", "test": "node --test" },
-  "engines": { "node": ">=20" }
+  "productName": "Chord Quest",
+  "main": "desktop.cjs",
+  "scripts": {
+    "start": "node server.js",
+    "desktop": "electron .",
+    "package:desktop": "node package-desktop.mjs",
+    "test": "node --test",
+    "test:desktop": "node desktop-smoke.cjs"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "electron": "44.4.5"
+  }
 }

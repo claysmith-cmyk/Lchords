@@ -1,6 +1,14 @@
 # Chord Quest
 
-A musical adventure for a USB MIDI keyboard, desktop computer keys, or an on-screen piano. No packages or account required.
+A musical adventure for a USB MIDI keyboard, desktop computer keys, or an on-screen piano. No account required.
+
+## Windows desktop app
+
+Open `release/Chord Quest-win32-x64/Chord Quest.exe`. Keep the entire folder together: the executable needs its neighboring files. The packaged app includes its runtime, so it requires neither Node.js nor a separate browser. Closing its window quits the app, including audio and MIDI; nothing runs in the background afterward.
+
+Choose **Connect keyboard** for USB MIDI, or play with computer keys and the on-screen piano. The game works offline; optional online fonts have local fallbacks. Progress saves in the app's own Windows profile, separately from browser progress, and survives closing and reopening the app.
+
+To develop or rebuild, use Node.js 22.12+: `npm ci`, then `npm run desktop` or `npm run package:desktop`. Build output lives in `release/`. Close the app before rebuilding; a rebuild replaces the generated app folder. Run `npm test` for game checks and `npm run test:desktop` for real Electron startup, MIDI permissions, audio state, gameplay, persistence across restarts, and shutdown checks. Desktop checks use a temporary profile and leave your progress untouched.
 
 ## Play
 

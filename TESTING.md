@@ -1,5 +1,13 @@
 # Verification — 2026-09-28
 
+## Windows desktop — 2026-09-29
+
+- Built `release/Chord Quest-win32-x64/Chord Quest.exe` with Electron 44.4.5. The package contains only the game assets, desktop entry point and package metadata; development tools and repository files are excluded.
+- `npm test`: all 9 existing game checks passed. Desktop entry point and packaging script syntax checks passed.
+- `npm run test:desktop`: passed using real Electron and an isolated temporary profile. Checked the secure app origin, sandboxed renderer without Node access, asset allowlist, denied microphone permission, MIDI access without SysEx, all 12 key paths, C-major acceptance, running audio context, saved XP/key selection after a full restart, and normal process exit.
+- Opened the packaged executable through Windows Computer Use. Adventure and lesson screens rendered correctly. The connection dialog detected **MPK mini 3**; the live lesson accepted C major, awarded 5 XP and advanced to F major on release. Audio status showed **Audio ready**; audible output was not independently measured in this desktop check.
+- The packaged app was closed after verification; checked that no project Electron or Chord Quest processes remained.
+
 ## Automated
 
 `npm test`: 9 passed, 0 failed.
