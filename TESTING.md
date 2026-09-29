@@ -1,5 +1,12 @@
 # Verification — 2026-09-28
 
+## Sharp note names — 2026-09-29
+
+- All 60 chords and all 48 key lessons use natural notes or single sharps, matching the piano. Lowered degrees in chord formulas are written in words.
+- `npm test`: 9 passed, including all chord names, note labels, lesson roots, key names, pitch matching and saved progress.
+- `npm run test:desktop`: passed, including sharp key labels, all five chord-book families, C-sharp major hints **C♯–F–G♯**, MIDI/audio and persistence after restart.
+- Rebuilt the Windows executable and synchronized the prepared website's game files. Verified that the executable's bundled game files match the tested source and that no project app processes remained.
+
 ## Windows desktop — 2026-09-29
 
 - Built `release/Chord Quest-win32-x64/Chord Quest.exe` with Electron 44.4.5. The package contains only the game assets, desktop entry point and package metadata; development tools and repository files are excluded.
@@ -13,7 +20,7 @@
 `npm test`: 9 passed, 0 failed.
 
 - Every combination of 12 roots and five chord families, inversions, octave doubling, missing notes and extra notes.
-- Correct theoretical spelling, including double accidentals.
+- Piano-friendly natural or single-sharp note names, including enharmonic edge cases.
 - Forty-eight lessons across 12 independent major-key paths cover all 60 chord identities, each with guided discovery and two recalls. G and F-sharp key spellings checked.
 - MIDI note-on, note-off, velocity-zero note-on, multiple channels, panic messages and ignored sustain.
 - Review intervals, failures and due-order prioritization.

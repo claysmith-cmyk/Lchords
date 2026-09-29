@@ -40,6 +40,18 @@ if (!process.versions.electron) {
             return 'Saved progress restored';
           }
           check((await fetch('/desktop.cjs')).status === 404, 'Main-process files must not be served');
+          check(!$('worlds').textContent.includes('♭'), 'Key selector must use sharps');
+          for (const option of $('book-family').options) {
+            $('book-family').value = option.value;
+            $('book-family').dispatchEvent(new Event('change'));
+            check(!$('chord-book').textContent.includes('♭'), 'Every chord-book family must use sharps');
+          }
+          document.querySelector('[data-key="1"]').click();
+          $('continue').click();
+          check($('chord-name').textContent === 'C♯ major', 'Lesson title must use sharps');
+          check([...$('note-chips').children].map(chip => chip.textContent).join(',') === 'C♯,F,G♯', 'Hints must match piano labels');
+          $('exit').click();
+          document.querySelector('[data-key="0"]').click();
           check((await navigator.permissions.query({ name: 'microphone' })).state === 'denied', 'Unneeded permissions must be denied');
           const midi = await navigator.requestMIDIAccess({ sysex: false });
           check(midi.sysexEnabled === false, 'Game MIDI access must not enable SysEx');

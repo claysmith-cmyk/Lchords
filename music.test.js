@@ -14,12 +14,19 @@ test('all 60 chords have the right pitches and accept inversions/octave doubling
   }
 });
 
-test('spells thirds and fifths correctly, including enharmonic edge cases', () => {
+test('all chord names, notes and formulas use piano-friendly sharp notation', () => {
+  const names = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+  for (const family of FAMILIES) for (let root = 0; root < 12; root++) {
+    const c = chord(chordId(family.id, root));
+    assert.equal(c.name, names[root] + family.symbol);
+    assert.deepEqual(spellNotes(c), c.notes.map(note => names[note]));
+    assert.doesNotMatch(family.formula, /♭/);
+  }
   assert.deepEqual(spellNotes(chord('major:0')), ['C', 'E', 'G']);
-  assert.deepEqual(spellNotes(chord('minor:1')), ['D♭', 'F♭', 'A♭']);
-  assert.deepEqual(spellNotes(chord('diminished:6')), ['G♭', 'B♭♭', 'D♭♭']);
-  assert.deepEqual(spellNotes(chord('augmented:11')), ['B', 'D♯', 'F♯♯']);
-  assert.deepEqual(spellNotes(chord('dominant7:10')), ['B♭', 'D', 'F', 'A♭']);
+  assert.deepEqual(spellNotes(chord('minor:1')), ['C♯', 'E', 'G♯']);
+  assert.deepEqual(spellNotes(chord('diminished:6')), ['F♯', 'A', 'C']);
+  assert.deepEqual(spellNotes(chord('augmented:11')), ['B', 'D♯', 'G']);
+  assert.deepEqual(spellNotes(chord('dominant7:10')), ['A♯', 'D', 'F', 'G♯']);
 });
 
 test('12 independent key paths cover all 60 chords with guided and recall rounds', () => {
@@ -32,13 +39,20 @@ test('12 independent key paths cover all 60 chords with guided and recall rounds
       covered.add(prompt.id);
       assert.ok(prompt.role);
       assert.equal(prompt.keyName, keyNotes(root)[0]);
+      const c = chord(prompt.id);
+      assert.equal(prompt.rootName, ROOTS[c.root]);
+      assert.equal(prompt.name, c.name);
+      assert.doesNotMatch(prompt.name + prompt.keyName, /♭/);
       assert.equal(queue.filter(p => p.id === prompt.id && !p.guided).length, 2);
     }
   }
   assert.equal(covered.size, ROOTS.length * FAMILIES.length);
   assert.deepEqual(keyNotes(7), ['G', 'A', 'B', 'C', 'D', 'E', 'F♯']);
-  assert.deepEqual(keyNotes(6), ['F♯', 'G♯', 'A♯', 'B', 'C♯', 'D♯', 'E♯']);
-  assert.deepEqual(spellNotes(chord('minor:10'), 'A♯'), ['A♯', 'C♯', 'E♯']);
+  assert.deepEqual(keyNotes(6), ['F♯', 'G♯', 'A♯', 'B', 'C♯', 'D♯', 'F']);
+  assert.deepEqual(keyNotes(1), ['C♯', 'D♯', 'F', 'F♯', 'G♯', 'A♯', 'C']);
+  assert.deepEqual(spellNotes(chord('minor:10')), ['A♯', 'C♯', 'F']);
+  assert.throws(() => keyNotes(12));
+  assert.throws(() => keyNotes(1.5));
   assert.throws(() => lesson(12, 0));
   assert.throws(() => lesson(0, 4));
 });

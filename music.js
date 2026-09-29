@@ -1,13 +1,13 @@
-export const ROOTS = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A♭', 'A', 'B♭', 'B'];
+export const ROOTS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
 export const FAMILIES = [
   { id: 'major', name: 'Major', symbol: '', intervals: [0, 4, 7], formula: '1 · 3 · 5', steps: '4 + 3', world: 'Sunlit Grove', color: '#b7e6a3', icon: '☀', description: 'Bright beginnings. Build a root, a major third, and a perfect fifth.' },
-  { id: 'minor', name: 'Minor', symbol: 'm', intervals: [0, 3, 7], formula: '1 · ♭3 · 5', steps: '3 + 4', world: 'Moonlight Marsh', color: '#b7afff', icon: '☾', description: 'A softer shade. Lower the major chord’s third by one semitone.' },
-  { id: 'diminished', name: 'Diminished', symbol: 'dim', intervals: [0, 3, 6], formula: '1 · ♭3 · ♭5', steps: '3 + 3', world: 'Crystal Caverns', color: '#8edee4', icon: '◇', description: 'A little tension. Stack two minor thirds, three semitones each.' },
+  { id: 'minor', name: 'Minor', symbol: 'm', intervals: [0, 3, 7], formula: '1 · minor 3rd · 5', steps: '3 + 4', world: 'Moonlight Marsh', color: '#b7afff', icon: '☾', description: 'A softer shade. Lower the major chord’s third by one semitone.' },
+  { id: 'diminished', name: 'Diminished', symbol: 'dim', intervals: [0, 3, 6], formula: '1 · minor 3rd · diminished 5th', steps: '3 + 3', world: 'Crystal Caverns', color: '#8edee4', icon: '◇', description: 'A little tension. Stack two minor thirds, three semitones each.' },
   { id: 'augmented', name: 'Augmented', symbol: 'aug', intervals: [0, 4, 8], formula: '1 · 3 · ♯5', steps: '4 + 4', world: 'Ember Peaks', color: '#ffb693', icon: '△', description: 'An otherworldly sound. Stack two major thirds, four semitones each.' },
-  { id: 'dominant7', name: 'Dominant 7', symbol: '7', intervals: [0, 4, 7, 10], formula: '1 · 3 · 5 · ♭7', steps: '4 + 3 + 3', world: 'Starlight Summit', color: '#f3d586', icon: '✦', description: 'Ready to go somewhere. Add a minor seventh to a major triad.' },
+  { id: 'dominant7', name: 'Dominant 7', symbol: '7', intervals: [0, 4, 7, 10], formula: '1 · 3 · 5 · minor 7th', steps: '4 + 3 + 3', world: 'Starlight Summit', color: '#f3d586', icon: '✦', description: 'Ready to go somewhere. Add a minor seventh to a major triad.' },
 ];
 export const ROOT_ORDER = [0, 5, 7, 2, 9, 4, 11, 10, 3, 8, 1, 6];
-export const KEY_NAMES = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
+export const KEY_NAMES = ROOTS;
 export const KEY_STAGES = [
   { name: 'Home chords', chords: [[0, 'major', 'I'], [3, 'major', 'IV'], [4, 'major', 'V']] },
   { name: 'Minor colors', chords: [[1, 'minor', 'ii'], [2, 'minor', 'iii'], [5, 'minor', 'vi']] },
@@ -22,18 +22,8 @@ export function chord(id) {
   if (!family || !Number.isInteger(root) || root < 0 || root > 11) throw new Error('Invalid chord');
   return { id, family, root, name: `${ROOTS[root]}${family.symbol}`, notes: family.intervals.map(n => (root + n) % 12) };
 }
-// Spelling follows chord degrees, including double flats/sharps where theory requires them.
-export function spellNotes(c, rootName = ROOTS[c.root]) {
-  const letters = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-  const naturals = [0, 2, 4, 5, 7, 9, 11];
-  const start = letters.indexOf(rootName[0]);
-  return c.notes.map((note, i) => {
-    const index = (start + i * 2) % 7;
-    let delta = (note - naturals[index] + 12) % 12;
-    if (delta > 6) delta -= 12;
-    return letters[index] + (delta < 0 ? '♭'.repeat(-delta) : '♯'.repeat(delta));
-  });
-}
+// Match piano labels using natural notes or a single sharp, regardless of chord degree.
+export const spellNotes = c => c.notes.map(note => ROOTS[note]);
 export function matches(notes, target) {
   const actual = new Set([...notes].map(n => ((n % 12) + 12) % 12));
   return actual.size === target.length && target.every(n => actual.has(n));
@@ -52,16 +42,8 @@ export function shuffle(items, random = Math.random) {
   return result;
 }
 export function keyNotes(root) {
-  const letters = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-  const naturals = [0, 2, 4, 5, 7, 9, 11];
-  const start = letters.indexOf(KEY_NAMES[root]?.[0]);
-  if (start < 0) throw new Error('Invalid key');
-  return [0, 2, 4, 5, 7, 9, 11].map((step, degree) => {
-    const index = (start + degree) % 7;
-    let delta = (root + step - naturals[index] + 12) % 12;
-    if (delta > 6) delta -= 12;
-    return letters[index] + (delta < 0 ? '♭'.repeat(-delta) : '♯'.repeat(delta));
-  });
+  if (!Number.isInteger(root) || root < 0 || root > 11) throw new Error('Invalid key');
+  return [0, 2, 4, 5, 7, 9, 11].map(step => ROOTS[(root + step) % 12]);
 }
 export function lesson(root, stage) {
   if (!Number.isInteger(root) || root < 0 || root > 11 || !KEY_STAGES[stage]) throw new Error('Invalid lesson');

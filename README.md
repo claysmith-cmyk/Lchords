@@ -30,7 +30,7 @@ If notes register but you hear nothing, click **Test sound** above the piano. MI
 - Mistakes and hints trigger extra recall within the session (up to 18 rounds), plus earlier future review. Hearing a chord in a recall round also counts as assistance.
 - Memory garden prioritizes due cards. Successful recall schedules reviews after 10 minutes, 1, 3, 7, 14, and 30 days; mistakes bring them back after 2 minutes. Each chord advances at most once per session. This is a simple fixed-interval schedule, not an individualized forgetting prediction.
 - Spark sprint offers 90 seconds of recall with streak bonuses using discovered chords. The chord book offers all formulas and individual practice.
-- XP and progress save locally in this browser. They do not sync across devices. Lesson completion records practice, not certified mastery. Existing chord cards and XP carry over from the older family-based curriculum; old lesson completion cannot map to a key path, so key lessons start fresh. Chord spelling follows musical degrees; for example, D-flat minor contains F-flat, the same piano key as E.
+- XP and progress save locally in this browser. They do not sync across devices. Lesson completion records practice, not certified mastery. Existing chord cards and XP carry over from the older family-based curriculum; old lesson completion cannot map to a key path, so key lessons start fresh. Note names match the piano everywhere: natural notes or a single sharp, such as C-sharp minor with C-sharp, E and G-sharp. Enharmonic names are simplified (for example, F instead of E-sharp).
 
 The app uses native Web Audio for synthesized tone and has no runtime dependencies. Optional Google Fonts enhance the appearance; fallback fonts work without network access.
 

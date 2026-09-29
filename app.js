@@ -25,7 +25,7 @@ let audioContext, autoCheck, advanceTimer, sprintTimer, toastTimer;
 const sources = new Map(), voices = new Map();
 const keyboardMap = new Map('awsedftgyhujkolp;'.split('').map((key, i) => [key, 60 + i]));
 const blackNotes = new Set([1, 3, 6, 8, 10]);
-const KEY_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+const KEY_NAMES = ROOTS;
 
 function save() {
   try { localStorage.setItem(STORAGE, JSON.stringify(progress)); }
@@ -129,7 +129,7 @@ function renderPrompt() {
   $('prompt-kind').textContent = prompt.guided ? `DISCOVER · ${s.index + 1} / ${s.queue.length}` : s.mode === 'sprint' ? `${s.streak} CHORD STREAK` : `RECALL · ${s.index + 1} / ${s.queue.length}`;
   $('chord-name').textContent = `${prompt.rootName || ROOTS[c.root]} ${c.family.name.toLowerCase()}`;
   $('prompt-description').textContent = prompt.role ? `${prompt.role} in ${prompt.keyName} major${prompt.guided ? ` · ${c.family.formula}` : ''}` : prompt.guided ? `${c.family.formula} · ${c.family.steps} semitones` : '';
-  $('note-chips').innerHTML = prompt.guided ? spellNotes(c, prompt.rootName).map(n => `<span class="note-chip">${n}</span>`).join('') : '';
+  $('note-chips').innerHTML = prompt.guided ? spellNotes(c).map(n => `<span class="note-chip">${n}</span>`).join('') : '';
   $('feedback').textContent = '';
   $('feedback').className = 'feedback';
   $('next').hidden = true; $('hint').hidden = prompt.guided; $('listen').disabled = false; $('check').disabled = false;
@@ -140,7 +140,7 @@ function reveal() {
   if (!session || session.complete) return;
   const prompt = session.queue[session.index], c = chord(prompt.id);
   session.hint = true;
-  $('note-chips').innerHTML = spellNotes(c, prompt.rootName).map(n => `<span class="note-chip">${n}</span>`).join('');
+  $('note-chips').innerHTML = spellNotes(c).map(n => `<span class="note-chip">${n}</span>`).join('');
   $('prompt-description').textContent = `${c.family.formula} · ${c.family.steps} semitones from ${prompt.rootName || ROOTS[c.root]}.`;
   $('feedback').textContent = '';
   $('hint').disabled = true; highlightPiano();
